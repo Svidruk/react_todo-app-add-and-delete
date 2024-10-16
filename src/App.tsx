@@ -23,14 +23,6 @@ export const App: React.FC = () => {
   const [isReceivingAnswer, setIsReceivingAnswer] = useState(false);
   const [loadingTodoIds, setLoadingTodoIds] = useState<number[]>([]);
 
-  useEffect(() => {
-    getTodos()
-      .then(setTodos)
-      .catch(() => {
-        handleErrorMessage(ErrorMessages.UNABLE_TO_LOAD_TODO);
-      });
-  }, []);
-
   const handleErrorReset = () => {
     setErrorMessage(ErrorMessages.NO_ERROR);
   };
@@ -39,6 +31,14 @@ export const App: React.FC = () => {
     setErrorMessage(error);
     setTimeout(handleErrorReset, 3000);
   };
+
+  useEffect(() => {
+    getTodos()
+      .then(setTodos)
+      .catch(() => {
+        handleErrorMessage(ErrorMessages.UNABLE_TO_LOAD_TODO);
+      });
+  }, []);
 
   const handleAddTodo = (newTodo: Todo) => {
     setTempTodo(newTodo);

@@ -6,16 +6,16 @@ import cn from 'classnames';
 interface Props {
   todo: Todo;
   isLoading: boolean;
-  onTodoDelete?: (id: number) => void;
+  onTodoDelete?: (todoId: number) => void;
 }
 
 export const TodoItem: FC<Props> = ({ todo, isLoading, onTodoDelete }) => {
   const [isEdited /*setIsEdited*/] = useState(false);
   const { id, title, completed } = todo;
 
-  const handleTodoDelete = (id: number) => {
+  const handleTodoDelete = (todoId: number) => {
     if (onTodoDelete) {
-      onTodoDelete(id);
+      onTodoDelete(todoId);
     }
   };
 
