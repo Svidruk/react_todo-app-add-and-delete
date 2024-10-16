@@ -21,7 +21,15 @@ export const App: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [isReceivingAnswer, setIsReceivingAnswer] = useState(false);
+  const [loadingTodoIds, setLoadingTodoIds] = useState<number[]>([]);
 
+  useEffect(() => {
+    getTodos()
+      .then(setTodos)
+      .catch(() => {
+        handleErrorMessage(ErrorMessages.UNABLE_TO_LOAD_TODO);
+      });
+  }, []);
 
   const handleErrorReset = () => {
     setErrorMessage(ErrorMessages.NO_ERROR);
@@ -32,14 +40,6 @@ export const App: React.FC = () => {
     setTimeout(handleErrorReset, 3000);
   };
 
-  useEffect(() => {
-    getTodos()
-      .then(setTodos)
-      .catch(() => {
-        handleErrorMessage(ErrorMessages.UNABLE_TO_LOAD_TODO);
-      });
-  }, []);
-
   const handleAddTodo = (newTodo: Todo) => {
     setTempTodo(newTodo);
     setIsReceivingAnswer(true);
@@ -47,7 +47,7 @@ export const App: React.FC = () => {
     addTodo(newTodo)
       .then(todo => {
         setTodos(currentTodos => [...currentTodos, todo]);
-        setNewTitle('')
+        setNewTitle('');
       })
       .catch(() => {
         handleErrorMessage(ErrorMessages.UNABLE_TO_ADD_TODO);
@@ -58,14 +58,46 @@ export const App: React.FC = () => {
       });
   };
 
-  const handleTodoDelete = (id: number) => {
-    deleteTodo(id)
+  const handleTodoDelete = (todoId: number) => {
+    setLoadingTodoIds(currentIds => [...currentIds, todoId]);
+    setIsReceivingAnswer(true);
+    deleteTodo(todoId)
       .then(() =>
-        setTodos(currentTodos => currentTodos.filter(todo => todo.id !== id)),
+        setTodos(currentTodos =>
+          currentTodos.filter(todo => todo.id !== todoId),
+        ),
       )
-      .catch(() => {
-        handleErrorMessage(ErrorMessages.UNABLE_TO_DELETE_TODO);
+      .catch(() => handleErrorMessage(ErrorMessages.UNABLE_TO_DELETE_TODO))
+      .finally(() => {
+        setLoadingTodoIds(currentIds => currentIds.filter(id => id !== todoId));
+        setIsReceivingAnswer(false);
       });
+  };
+
+  const handleCompletedDelete = () => {
+    const completedTodos = todos.filter(todo => todo.completed);
+    setIsReceivingAnswer(true);
+    setLoadingTodoIds(currentIds => [
+      ...currentIds,
+      ...completedTodos.map(todo => todo.id),
+    ]);
+
+    Promise.all(
+      completedTodos.map(completedTodo =>
+        deleteTodo(completedTodo.id)
+          .then(() => {
+            setTodos(currentTodos =>
+              currentTodos.filter(todo => todo.id !== completedTodo.id),
+            );
+          })
+          .catch(() => handleErrorMessage(ErrorMessages.UNABLE_TO_DELETE_TODO))
+          .finally(() => {
+            setLoadingTodoIds(currentIds =>
+              currentIds.filter(id => id !== completedTodo.id),
+            );
+          }),
+      ),
+    ).finally(() => setIsReceivingAnswer(false));
   };
 
   return (
@@ -85,6 +117,7 @@ export const App: React.FC = () => {
         <TodoList
           tempTodo={tempTodo}
           todos={todos}
+          loadingTodoIds={loadingTodoIds}
           filterOption={filterOption}
           onTodoDelete={handleTodoDelete}
         />
@@ -94,6 +127,7 @@ export const App: React.FC = () => {
             todos={todos}
             currentFilter={filterOption}
             onFilterOptionChange={setFilterOption}
+            onCompletedDelete={handleCompletedDelete}
           />
         )}
       </div>

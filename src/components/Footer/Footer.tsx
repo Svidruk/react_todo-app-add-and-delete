@@ -7,12 +7,14 @@ interface Props {
   todos: Todo[];
   currentFilter: FilterOptions;
   onFilterOptionChange: (status: FilterOptions) => void;
+  onCompletedDelete: () => void;
 }
 
 export const Footer: FC<Props> = ({
   todos,
   currentFilter,
   onFilterOptionChange,
+  onCompletedDelete,
 }) => {
   const todosLeft = todos.reduce(
     (current, todo) => current + (!todo.completed ? 1 : 0),
@@ -48,6 +50,7 @@ export const Footer: FC<Props> = ({
         className="todoapp__clear-completed"
         data-cy="ClearCompletedButton"
         disabled={hasCompletedTodo}
+        onClick={onCompletedDelete}
       >
         Clear completed
       </button>
